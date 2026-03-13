@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartGrid-AI — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg0: #080c10;
+  --bg1: #0d1117;
+  --bg2: #111820;
+  --bg3: #162030;
+  --border: #1e2d3d;
+  --border2: #243545;
+  --cyan: #00d4ff;
+  --cyan2: #0099cc;
+  --cyan-dim: #004466;
+  --green: #00ff88;
+  --green2: #00cc66;
+  --green-dim: #003322;
+  --orange: #ff8800;
+  --orange-dim: #331a00;
+  --red: #ff3355;
+  --red-dim: #330011;
+  --yellow: #ffcc00;
+  --yellow-dim: #332200;
+  --text: #c8d8e8;
+  --text2: #7090a8;
+  --text3: #405060;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Barlow Condensed', sans-serif;
+  --body: 'Barlow', sans-serif;
+}
+
+body {
+  background: var(--bg0);
+  color: var(--text);
+  font-family: var(--body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,12,16,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px;
+  animation: slideDown 0.4s ease both;
+}
+@keyframes slideDown { from { transform: translateY(-52px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-weight: 900; font-size: 20px;
+  letter-spacing: 0.08em; color: var(--cyan);
+  text-transform: uppercase;
+}
+.logo-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.topbar-center {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text2); letter-spacing: 0.1em;
+  display: flex; gap: 24px;
+}
+.topbar-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.topbar-stat .val { color: var(--cyan); font-size: 14px; }
+.topbar-stat .lbl { color: var(--text3); font-size: 9px; text-transform: uppercase; }
+
+.topbar-time {
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
+  display: flex; align-items: center; gap: 8px;
+}
+.live-badge {
+  background: var(--red); color: white;
+  font-family: var(--mono); font-size: 9px;
+  padding: 2px 6px; border-radius: 2px;
+  animation: livepulse 1.5s infinite;
+}
+@keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* ── NAV ── */
+.nav {
+  display: flex; align-items: center; gap: 2px;
+  padding: 12px 24px 0;
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 1;
+  animation: fadeIn 0.5s 0.1s both;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.nav-tab {
+  font-family: var(--sans); font-weight: 600; font-size: 13px;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 8px 20px; cursor: pointer;
+  color: var(--text3); border-bottom: 2px solid transparent;
+  transition: all 0.2s; position: relative;
+}
+.nav-tab:hover { color: var(--text2); }
+.nav-tab.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+}
+.nav-tab.alert-tab { color: var(--orange); }
+.nav-tab.alert-tab .badge {
+  background: var(--red); color: white;
+  font-size: 9px; padding: 1px 5px; border-radius: 8px;
+  margin-left: 4px;
+}
+
+/* ── MAIN ── */
+.main {
+  padding: 20px 24px; position: relative; z-index: 1;
+}
+
+/* ── ALERT BANNER ── */
+.alert-banner {
+  background: linear-gradient(135deg, var(--red-dim), #220015);
+  border: 1px solid var(--red);
+  border-left: 4px solid var(--red);
+  border-radius: 4px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  display: flex; align-items: flex-start; gap: 16px;
+  animation: fadeIn 0.4s 0.2s both;
+  box-shadow: 0 0 30px rgba(255,51,85,0.15);
+}
+.alert-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.alert-content { flex: 1; }
+.alert-title {
+  font-family: var(--sans); font-weight: 700; font-size: 16px;
+  color: var(--red); text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.alert-body { font-family: var(--mono); font-size: 12px; color: #ff8899; line-height: 1.6; }
+.alert-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.action-btn {
+  font-family: var(--sans); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 5px 12px; border-radius: 3px; cursor: pointer;
+  border: 1px solid; transition: all 0.15s;
+}
+.action-btn.red { color: var(--red); border-color: var(--red); background: transparent; }
+.action-btn.red:hover { background: var(--red); color: white; }
+.action-btn.orange { color: var(--orange); border-color: var(--orange); background: transparent; }
+.action-btn.orange:hover { background: var(--orange); color: black; }
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 20px;
+  animation: fadeIn 0.4s 0.3s both;
+}
+.kpi-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 16px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+}
+.kpi-card.cyan::before { background: var(--cyan); }
+.kpi-card.green::before { background: var(--green); }
+.kpi-card.orange::before { background: var(--orange); }
+.kpi-card.red::before { background: var(--red); }
+
+.kpi-label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.12em; margin-bottom: 8px;
+}
+.kpi-value {
+  font-family: var(--sans); font-weight: 900; font-size: 32px;
+  line-height: 1; margin-bottom: 4px;
+}
+.kpi-card.cyan .kpi-value { color: var(--cyan); }
+.kpi-card.green .kpi-value { color: var(--green); }
+.kpi-card.orange .kpi-value { color: var(--orange); }
+.kpi-card.red .kpi-value { color: var(--red); }
+
+.kpi-sub {
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+}
+.kpi-delta {
+  position: absolute; top: 14px; right: 14px;
+  font-family: var(--mono); font-size: 11px;
+}
+.delta-up { color: var(--red); }
+.delta-down { color: var(--green); }
+.delta-neutral { color: var(--text2); }
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+/* ── PANEL ── */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden;
+  animation: fadeIn 0.5s both;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+}
+.panel-title {
+  font-family: var(--sans); font-weight: 700; font-size: 13px;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-title-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+.dot-cyan { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot-orange { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+.dot-red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.dot-yellow { background: var(--yellow); }
+
+.panel-tag {
+  font-family: var(--mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 2px;
+}
+.tag-cyan { background: var(--cyan-dim); color: var(--cyan); border: 1px solid var(--cyan2); }
+.tag-green { background: var(--green-dim); color: var(--green2); border: 1px solid var(--green2); }
+.tag-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); }
+.tag-red { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+
+.panel-body { padding: 16px; }
+
+/* ── SVG CHARTS ── */
+svg { display: block; }
+
+/* ── DEMAND CHART ── */
+.chart-wrap { position: relative; }
+.chart-label {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  text-anchor: middle;
+}
+.chart-value {
+  font-family: var(--mono); font-size: 10px;
+  text-anchor: end;
+}
+
+/* ── ACTIONS PANEL ── */
+.action-list { display: flex; flex-direction: column; gap: 8px; }
+.action-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 4px; border: 1px solid;
+  transition: all 0.15s;
+}
+.action-item:hover { filter: brightness(1.1); }
+.action-item.critical {
+  background: var(--red-dim); border-color: rgba(255,51,85,0.4);
+}
+.action-item.warning {
+  background: var(--orange-dim); border-color: rgba(255,136,0,0.4);
+}
+.action-item.info {
+  background: var(--cyan-dim); border-color: rgba(0,212,255,0.3);
+}
+.action-item.success {
+  background: var(--green-dim); border-color: rgba(0,255,136,0.3);
+}
+.action-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.action-text { flex: 1; }
+.action-segment {
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 3px;
+}
+.action-item.critical .action-segment { color: var(--red); }
+.action-item.warning .action-segment { color: var(--orange); }
+.action-item.info .action-segment { color: var(--cyan); }
+.action-item.success .action-segment { color: var(--green2); }
+.action-desc {
+  font-family: var(--body); font-size: 12px; color: var(--text);
+  line-height: 1.4;
+}
+.action-time {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  flex-shrink: 0; align-self: center;
+}
+
+/* ── ZONE BARS ── */
+.zone-list { display: flex; flex-direction: column; gap: 6px; }
+.zone-row { display: flex; align-items: center; gap: 10px; }
+.zone-name {
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+  width: 80px; flex-shrink: 0; text-align: right;
+}
+.zone-bar-wrap {
+  flex: 1; height: 20px; background: var(--bg3);
+  border-radius: 2px; overflow: hidden; position: relative;
+}
+.zone-bar {
+  height: 100%; border-radius: 2px;
+  transition: width 1s ease;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 6px;
+}
+.zone-bar-val {
+  font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+}
+.zone-pct {
+  font-family: var(--mono); font-size: 11px; color: var(--text3);
+  width: 40px; text-align: right; flex-shrink: 0;
+}
+
+/* ── LMP TABLE ── */
+.lmp-table { width: 100%; border-collapse: collapse; }
+.lmp-table th {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text3); text-align: left;
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+}
+.lmp-table td {
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+  padding: 7px 8px; border-bottom: 1px solid rgba(30,45,61,0.6);
+}
+.lmp-table tr:hover td { background: var(--bg3); }
+.lmp-spike { color: var(--red) !important; }
+.lmp-high  { color: var(--orange) !important; }
+.lmp-normal{ color: var(--green2) !important; }
+.congestion-badge {
+  font-size: 9px; padding: 1px 5px; border-radius: 2px;
+  font-weight: 600;
+}
+.cong-yes { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+.cong-no  { background: var(--green-dim); color: var(--green2); border: 1px solid var(--green2); }
+
+/* ── PREDICTION SECTION ── */
+.pred-row { display: flex; gap: 14px; align-items: stretch; margin-bottom: 14px; }
+.pred-main { flex: 2; }
+.pred-side { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+.mape-dial {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px;
+}
+.mape-value {
+  font-family: var(--sans); font-weight: 900; font-size: 48px;
+  color: var(--green); line-height: 1;
+}
+.mape-label {
+  font-family: var(--mono); font-size: 11px; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;
+}
+.mape-bar-wrap {
+  width: 100%; height: 6px; background: var(--bg3);
+  border-radius: 3px; margin-top: 12px; overflow: hidden;
+}
+.mape-bar {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  width: 75%;
+}
+
+/* ── WEATHER STRIP ── */
+.weather-strip {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 12px 16px;
+  scrollbar-width: none;
+}
+.weather-hour {
+  flex-shrink: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  padding: 8px 10px; border-radius: 4px;
+  border: 1px solid var(--border);
+  min-width: 56px;
+  transition: all 0.15s;
+}
+.weather-hour:hover { border-color: var(--cyan2); background: var(--bg3); }
+.weather-hour.now {
+  border-color: var(--cyan);
+  background: linear-gradient(180deg, rgba(0,212,255,0.08), transparent);
+}
+.wh-time { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+.wh-icon { font-size: 20px; }
+.wh-temp {
+  font-family: var(--sans); font-weight: 700; font-size: 14px; color: var(--text);
+}
+.wh-temp.cold { color: var(--cyan); }
+.wh-temp.hot { color: var(--orange); }
+
+/* ── FOOTER ── */
+.dash-footer {
+  margin-top: 20px; padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  position: relative; z-index: 1;
+}
+
+/* ── TABS CONTENT ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg1); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    SmartGrid<span style="color:var(--text2);font-weight:300">—</span>AI
+  </div>
+  <div class="topbar-center">
+    <div class="topbar-stat"><span class="val">17 842</span><span class="lbl">MW Demande</span></div>
+    <div class="topbar-stat"><span class="val" style="color:var(--green)">18 210</span><span class="lbl">Prévision J+1</span></div>
+    <div class="topbar-stat"><span class="val" style="color:var(--orange)">$124.50</span><span class="lbl">LMP Moyen</span></div>
+    <div class="topbar-stat"><span class="val">-8°C</span><span class="lbl">Toronto</span></div>
+    <div class="topbar-stat"><span class="val" style="color:var(--green)">2.8%</span><span class="lbl">MAPE</span></div>
+  </div>
+  <div class="topbar-time">
+    <span class="live-badge">LIVE</span>
+    <span id="clock">13 Mar 2026 — 14:32:07</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-tab active" onclick="switchTab('demand')">⚡ Demande</div>
+  <div class="nav-tab" onclick="switchTab('zones')">🗺 Zones</div>
+  <div class="nav-tab" onclick="switchTab('lmp')">💰 Prix LMP</div>
+  <div class="nav-tab" onclick="switchTab('prediction')">🤖 Prédiction ML</div>
+  <div class="nav-tab alert-tab" onclick="switchTab('actions')">🔔 Actions <span class="badge">3</span></div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- TAB 1 — DEMANDE                                  -->
+<!-- ════════════════════════════════════════════════ -->
+<div id="tab-demand" class="tab-content active">
+<div class="main">
+
+  <!-- Alert Banner -->
+  <div class="alert-banner">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-content">
+      <div class="alert-title">Alerte Pointe Critique — Demain 13 Mar 2026</div>
+      <div class="alert-body">
+        Prévision J+1 : <strong style="color:var(--red)">18 210 MW</strong> — Seuil critique : 18 000 MW &nbsp;|&nbsp; Température prévue : <strong>-12°C</strong> &nbsp;|&nbsp; Probabilité top-5 annuel : <strong style="color:var(--red)">87%</strong>
+      </div>
+      <div class="alert-actions">
+        <div class="action-btn red">🔴 Activer réserves gaz</div>
+        <div class="action-btn orange">📞 Contacter Manitoba</div>
+        <div class="action-btn orange">📧 Alerter Class A clients</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card cyan">
+      <div class="kpi-label">Demande actuelle</div>
+      <div class="kpi-value">17 842</div>
+      <div class="kpi-sub">MW — 14h32 HNE</div>
+      <div class="kpi-delta delta-up">▲ +3.2%</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Prévision J+1</div>
+      <div class="kpi-value">18 210</div>
+      <div class="kpi-sub">MW — pic estimé 19h</div>
+      <div class="kpi-delta delta-up">▲ +2.1%</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Peak aujourd'hui</div>
+      <div class="kpi-value">17 995</div>
+      <div class="kpi-sub">MW — à 09h00</div>
+      <div class="kpi-delta delta-neutral">→ Normal</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Market Demand</div>
+      <div class="kpi-value">19 489</div>
+      <div class="kpi-sub">MW — incl. pertes + exports</div>
+      <div class="kpi-delta delta-down">▼ -0.8%</div>
+    </div>
+  </div>
+
+  <!-- Main chart + actions -->
+  <div class="grid-2">
+    <!-- Demand chart -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-cyan"></div>Demande Horaire — Aujourd'hui vs Hier vs Prévision J+1</div>
+        <span class="panel-tag tag-cyan">HORAIRE</span>
+      </div>
+      <div class="panel-body">
+        <svg width="100%" height="220" viewBox="0 0 600 220">
+          <defs>
+            <linearGradient id="gradCyan" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="gradRed" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff3355" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#ff3355" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="40" y1="20" x2="40" y2="185" stroke="#1e2d3d" stroke-width="1"/>
+          <line x1="40" y1="185" x2="590" y2="185" stroke="#1e2d3d" stroke-width="1"/>
+          <line x1="40" y1="140" x2="590" y2="140" stroke="#1e2d3d" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="40" y1="100" x2="590" y2="100" stroke="#1e2d3d" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="40" y1="60" x2="590" y2="60" stroke="#1e2d3d" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <!-- Y labels -->
+          <text x="36" y="144" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="end">15000</text>
+          <text x="36" y="104" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="end">16500</text>
+          <text x="36" y="64" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="end">18000</text>
+          <!-- Threshold line -->
+          <line x1="40" y1="55" x2="590" y2="55" stroke="#ff3355" stroke-width="1" stroke-dasharray="6,3" opacity="0.6"/>
+          <text x="594" y="58" fill="#ff3355" font-size="9" font-family="Share Tech Mono">SEUIL</text>
+          <!-- Yesterday (dim) -->
+          <polyline points="40,145 65,142 90,138 115,132 140,128 165,122 190,110 215,98 240,92 265,88 290,85 315,90 340,95 365,102 390,108 415,112 440,118 465,125 490,130 515,136 540,140 565,138 590,142"
+            fill="none" stroke="#405060" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <!-- Area fill today -->
+          <polygon points="40,148 65,144 90,140 115,135 140,130 165,125 190,112 215,100 240,90 265,82 290,75 315,80 340,88 365,97 390,110 415,115 440,120 465,128 490,134 515,138 540,142 565,140 590,144 590,185 40,185"
+            fill="url(#gradCyan)" opacity="0.7"/>
+          <!-- Line today -->
+          <polyline points="40,148 65,144 90,140 115,135 140,130 165,125 190,112 215,100 240,90 265,82 290,75 315,80 340,88 365,97 390,110 415,115 440,120 465,128 490,134 515,138 540,142 565,140 590,144"
+            fill="none" stroke="#00d4ff" stroke-width="2.5"/>
+          <!-- Forecast line (dashed red) -->
+          <polyline points="40,148 65,142 90,136 115,130 140,124 165,118 190,106 215,94 240,84 265,76 290,68 315,73 340,81 365,90 390,104 415,110 440,115 465,124 490,130 515,134 540,138 565,136 590,140"
+            fill="none" stroke="#ff3355" stroke-width="2" stroke-dasharray="5,3" opacity="0.8"/>
+          <!-- Area forecast -->
+          <polygon points="40,148 65,142 90,136 115,130 140,124 165,118 190,106 215,94 240,84 265,76 290,68 315,73 340,81 365,90 390,104 415,110 440,115 465,124 490,130 515,134 540,138 565,136 590,140 590,185 40,185"
+            fill="url(#gradRed)" opacity="0.3"/>
+          <!-- Peak marker -->
+          <circle cx="315" cy="68" r="4" fill="#ff3355" opacity="0.9"/>
+          <line x1="315" y1="68" x2="315" y2="185" stroke="#ff3355" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>
+          <text x="318" y="65" fill="#ff3355" font-size="9" font-family="Share Tech Mono">PEAK 19h</text>
+          <!-- Current time marker -->
+          <line x1="390" y1="20" x2="390" y2="185" stroke="#00d4ff" stroke-width="1" opacity="0.4"/>
+          <text x="393" y="30" fill="#00d4ff" font-size="9" font-family="Share Tech Mono">MAINTENANT</text>
+          <!-- X labels -->
+          <text x="40" y="198" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="middle">0h</text>
+          <text x="152" y="198" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="middle">6h</text>
+          <text x="265" y="198" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="middle">12h</text>
+          <text x="378" y="198" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="middle">18h</text>
+          <text x="490" y="198" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="middle">21h</text>
+          <text x="590" y="198" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="middle">24h</text>
+          <!-- Legend -->
+          <line x1="42" y1="215" x2="62" y2="215" stroke="#00d4ff" stroke-width="2"/>
+          <text x="66" y="218" fill="#7090a8" font-size="9" font-family="Share Tech Mono">Aujourd'hui</text>
+          <line x1="140" y1="215" x2="160" y2="215" stroke="#ff3355" stroke-width="2" stroke-dasharray="4,2"/>
+          <text x="164" y="218" fill="#7090a8" font-size="9" font-family="Share Tech Mono">Prévision J+1</text>
+          <line x1="255" y1="215" x2="275" y2="215" stroke="#405060" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="279" y="218" fill="#7090a8" font-size="9" font-family="Share Tech Mono">Hier</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Actions panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-red"></div>Actions Requises</div>
+        <span class="panel-tag tag-red">3 ACTIVES</span>
+      </div>
+      <div class="panel-body">
+        <div class="action-list">
+          <div class="action-item critical">
+            <div class="action-icon">🔴</div>
+            <div class="action-text">
+              <div class="action-segment">Opérateur IESO — CRITIQUE</div>
+              <div class="action-desc">Activer centrales gaz de réserve. Prévision 18 210 MW dépasse seuil 18 000 MW demain à 19h.</div>
+            </div>
+            <div class="action-time">→ J+1</div>
+          </div>
+          <div class="action-item warning">
+            <div class="action-icon">🏭</div>
+            <div class="action-text">
+              <div class="action-segment">Class A — Global Adjustment</div>
+              <div class="action-desc">Réduire consommation industrielle de 9h à 21h demain. Probabilité top-5 annuel : 87%.</div>
+            </div>
+            <div class="action-time">→ 21h00</div>
+          </div>
+          <div class="action-item warning">
+            <div class="action-icon">📞</div>
+            <div class="action-text">
+              <div class="action-segment">Opérateur — Import</div>
+              <div class="action-desc">Contacter Manitoba Hydro pour import +400 MW. Température -12°C prévue, chauffage en hausse.</div>
+            </div>
+            <div class="action-time">→ 17h00</div>
+          </div>
+          <div class="action-item info">
+            <div class="action-icon">❄️</div>
+            <div class="action-text">
+              <div class="action-segment">Facility Manager</div>
+              <div class="action-desc">Pré-chauffer bâtiments la nuit (2h-6h) pour éviter pic de chauffage au réveil.</div>
+            </div>
+            <div class="action-time">→ 02h00</div>
+          </div>
+          <div class="action-item success">
+            <div class="action-icon">🌿</div>
+            <div class="action-text">
+              <div class="action-segment">Gestionnaire ESG</div>
+              <div class="action-desc">Fenêtre propre 3h-6h (nucléaire dominant, gaz minimal). Planifier ops énergivores.</div>
+            </div>
+            <div class="action-time">→ 03h00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather strip -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-header">
+      <div class="panel-title"><div class="panel-title-dot dot-cyan"></div>Météo Toronto — Prévision 24h (Open-Meteo)</div>
+      <span class="panel-tag tag-cyan">CORRÉLATION DEMANDE</span>
+    </div>
+    <div class="weather-strip">
+      <div class="weather-hour"><span class="wh-time">01h</span><span class="wh-icon">🌙</span><span class="wh-temp cold">-6°</span></div>
+      <div class="weather-hour"><span class="wh-time">02h</span><span class="wh-icon">🌙</span><span class="wh-temp cold">-7°</span></div>
+      <div class="weather-hour"><span class="wh-time">03h</span><span class="wh-icon">🌙</span><span class="wh-temp cold">-8°</span></div>
+      <div class="weather-hour"><span class="wh-time">06h</span><span class="wh-icon">❄️</span><span class="wh-temp cold">-9°</span></div>
+      <div class="weather-hour"><span class="wh-time">08h</span><span class="wh-icon">🌤</span><span class="wh-temp cold">-10°</span></div>
+      <div class="weather-hour"><span class="wh-time">09h</span><span class="wh-icon">☀️</span><span class="wh-temp cold">-10°</span></div>
+      <div class="weather-hour now"><span class="wh-time">14h ▸</span><span class="wh-icon">☀️</span><span class="wh-temp cold">-8°</span></div>
+      <div class="weather-hour"><span class="wh-time">16h</span><span class="wh-icon">🌤</span><span class="wh-temp cold">-9°</span></div>
+      <div class="weather-hour"><span class="wh-time">18h</span><span class="wh-icon">🌙</span><span class="wh-temp cold">-11°</span></div>
+      <div class="weather-hour"><span class="wh-time">19h</span><span class="wh-icon">❄️</span><span class="wh-temp cold" style="color:var(--red)">-12°</span></div>
+      <div class="weather-hour"><span class="wh-time">21h</span><span class="wh-icon">❄️</span><span class="wh-temp cold">-13°</span></div>
+      <div class="weather-hour"><span class="wh-time">23h</span><span class="wh-icon">❄️</span><span class="wh-temp cold">-14°</span></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- TAB 2 — ZONES                                    -->
+<!-- ════════════════════════════════════════════════ -->
+<div id="tab-zones" class="tab-content">
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi-card cyan"><div class="kpi-label">Zone leader</div><div class="kpi-value" style="font-size:24px">Toronto</div><div class="kpi-sub">5 568 MW — 33.3%</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Zone en tension</div><div class="kpi-value" style="font-size:24px">Southwest</div><div class="kpi-sub">3 000 MW — +8% vs moy</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Total Ontario</div><div class="kpi-value">16 697</div><div class="kpi-sub">MW — Zone Total</div></div>
+    <div class="kpi-card cyan"><div class="kpi-label">Zones actives</div><div class="kpi-value">10</div><div class="kpi-sub">Zones de transmission</div></div>
+  </div>
+
+  <div class="grid-equal">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-cyan"></div>Consommation par Zone — MW</div>
+        <span class="panel-tag tag-cyan">TEMPS RÉEL</span>
+      </div>
+      <div class="panel-body">
+        <div class="zone-list">
+          <div class="zone-row">
+            <div class="zone-name">Toronto</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:82%;background:linear-gradient(90deg,#00d4ff,#0099cc)"><span class="zone-bar-val">5 568</span></div></div>
+            <div class="zone-pct" style="color:var(--cyan)">33%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Southwest</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:45%;background:linear-gradient(90deg,#ff8800,#cc6600)"><span class="zone-bar-val">3 000</span></div></div>
+            <div class="zone-pct" style="color:var(--orange)">18%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">West</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:29%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">1 949</span></div></div>
+            <div class="zone-pct">12%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Northeast</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:22%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">1 474</span></div></div>
+            <div class="zone-pct">9%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">East</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:16%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">1 085</span></div></div>
+            <div class="zone-pct">7%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Ottawa</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:16%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">1 049</span></div></div>
+            <div class="zone-pct">6%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Essa</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:18%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">1 219</span></div></div>
+            <div class="zone-pct">7%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Niagara</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:8%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">569</span></div></div>
+            <div class="zone-pct">3%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Northwest</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:10%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">688</span></div></div>
+            <div class="zone-pct">4%</div>
+          </div>
+          <div class="zone-row">
+            <div class="zone-name">Bruce</div>
+            <div class="zone-bar-wrap"><div class="zone-bar" style="width:1.5%;background:linear-gradient(90deg,#405060,#243545)"><span class="zone-bar-val" style="color:var(--text2);padding-left:6px">96</span></div></div>
+            <div class="zone-pct">1%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-orange"></div>Actions — Analyse Zonale</div>
+        <span class="panel-tag tag-orange">PLANIFICATEURS</span>
+      </div>
+      <div class="panel-body">
+        <div class="action-list">
+          <div class="action-item warning">
+            <div class="action-icon">🏗️</div>
+            <div class="action-text">
+              <div class="action-segment">Planificateur réseau</div>
+              <div class="action-desc">Southwest à +8% vs moyenne. Prioriser renforcement lignes de transmission corridor Windsor-Toronto.</div>
+            </div>
+          </div>
+          <div class="action-item info">
+            <div class="action-icon">🔍</div>
+            <div class="action-text">
+              <div class="action-segment">Opérateur IESO</div>
+              <div class="action-desc">Toronto représente 33% de la demande totale. Surveiller tension sur sous-stations principales.</div>
+            </div>
+          </div>
+          <div class="action-item success">
+            <div class="action-icon">💡</div>
+            <div class="action-text">
+              <div class="action-segment">Développeur projets</div>
+              <div class="action-desc">Opportunité stockage d'énergie en zone Southwest — forte croissance de la demande industrielle.</div>
+            </div>
+          </div>
+          <div class="action-item info">
+            <div class="action-icon">📊</div>
+            <div class="action-text">
+              <div class="action-segment">Collectivité locale</div>
+              <div class="action-desc">Northwest stable — aucune action requise. Idéal pour maintenance préventive cette semaine.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- TAB 3 — LMP                                      -->
+<!-- ════════════════════════════════════════════════ -->
+<div id="tab-lmp" class="tab-content">
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi-card orange"><div class="kpi-label">LMP Moyen Ontario</div><div class="kpi-value">$124.50</div><div class="kpi-sub">$/MWh — Day-Ahead</div><div class="kpi-delta delta-up">▲ +22%</div></div>
+    <div class="kpi-card red"><div class="kpi-label">LMP Max (spike)</div><div class="kpi-value">$195.50</div><div class="kpi-sub">ZURICH-LT.AG_T1</div><div class="kpi-delta delta-up">▲ spike</div></div>
+    <div class="kpi-card green"><div class="kpi-label">LMP Min</div><div class="kpi-value">$93.61</div><div class="kpi-sub">ABITIBISF-LT.AG_T1</div><div class="kpi-delta delta-down">▼ -24%</div></div>
+    <div class="kpi-card cyan"><div class="kpi-label">Noeuds en congestion</div><div class="kpi-value">12</div><div class="kpi-sub">sur ~1042 locations</div><div class="kpi-delta delta-neutral">→ 1.1%</div></div>
+  </div>
+
+  <div class="grid-equal">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-orange"></div>Top 10 Locations — LMP $/MWh</div>
+        <span class="panel-tag tag-orange">DAY-AHEAD</span>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <table class="lmp-table">
+          <thead>
+            <tr><th>#</th><th>Location</th><th>LMP</th><th>Loss</th><th>Congestion</th><th>Statut</th></tr>
+          </thead>
+          <tbody>
+            <tr><td style="color:var(--text3)">1</td><td>ZURICH-LT.AG_T1</td><td class="lmp-spike">$195.50</td><td style="color:var(--text2)">-$5.00</td><td class="lmp-spike">$12.30</td><td><span class="congestion-badge cong-yes">CONGESTION</span></td></tr>
+            <tr><td style="color:var(--text3)">2</td><td>CHATHAM-LT.AG_T2</td><td class="lmp-spike">$182.00</td><td style="color:var(--text2)">-$4.50</td><td class="lmp-spike">$9.80</td><td><span class="congestion-badge cong-yes">CONGESTION</span></td></tr>
+            <tr><td style="color:var(--text3)">3</td><td>LONDON-500.AG_T1</td><td class="lmp-high">$165.30</td><td style="color:var(--text2)">-$3.90</td><td class="lmp-high">$4.20</td><td><span class="congestion-badge cong-yes">CONGESTION</span></td></tr>
+            <tr><td style="color:var(--text3)">4</td><td>TORONTO-115.AG_T1</td><td class="lmp-high">$158.80</td><td style="color:var(--text2)">-$2.10</td><td class="lmp-high">$2.50</td><td><span class="congestion-badge cong-yes">CONGESTION</span></td></tr>
+            <tr><td style="color:var(--text3)">5</td><td>WINDSOR-500.AG_T1</td><td class="lmp-high">$148.20</td><td style="color:var(--text2)">-$1.80</td><td style="color:var(--text2)">$0.00</td><td><span class="congestion-badge cong-no">OK</span></td></tr>
+            <tr><td style="color:var(--text3)">6</td><td>NIAGARA-500.AG_T1</td><td class="lmp-normal">$132.50</td><td style="color:var(--text2)">-$1.20</td><td style="color:var(--text2)">$0.00</td><td><span class="congestion-badge cong-no">OK</span></td></tr>
+            <tr><td style="color:var(--text3)">7</td><td>OTTAWA-230.AG_T1</td><td class="lmp-normal">$128.70</td><td style="color:var(--text2)">-$0.90</td><td style="color:var(--text2)">$0.00</td><td><span class="congestion-badge cong-no">OK</span></td></tr>
+            <tr><td style="color:var(--text3)">8</td><td>BARRIE-115.AG_T2</td><td class="lmp-normal">$118.40</td><td style="color:var(--text2)">-$0.60</td><td style="color:var(--text2)">$0.00</td><td><span class="congestion-badge cong-no">OK</span></td></tr>
+            <tr><td style="color:var(--text3)">9</td><td>SUDBURY-230.AG_T1</td><td class="lmp-normal">$110.20</td><td style="color:var(--text2)">-$0.40</td><td style="color:var(--text2)">$0.00</td><td><span class="congestion-badge cong-no">OK</span></td></tr>
+            <tr><td style="color:var(--text3)">10</td><td>ABITIBISF-LT.AG_T1</td><td class="lmp-normal">$93.61</td><td style="color:var(--text2)">$7.41</td><td style="color:var(--text2)">$0.00</td><td><span class="congestion-badge cong-no">OK</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-orange"></div>Actions — Traders & Gestionnaires</div>
+        <span class="panel-tag tag-orange">FINANCIER</span>
+      </div>
+      <div class="panel-body">
+        <div class="action-list">
+          <div class="action-item critical">
+            <div class="action-icon">💹</div>
+            <div class="action-text">
+              <div class="action-segment">Trader — VENDRE maintenant</div>
+              <div class="action-desc">ZURICH-LT $195.50 avec congestion active. Arbitrage: vendre sur ce noeud, acheter ABITIBISF $93.61. Spread : $101.89/MWh.</div>
+            </div>
+          </div>
+          <div class="action-item warning">
+            <div class="action-icon">🚫</div>
+            <div class="action-text">
+              <div class="action-segment">Trader — ÉVITER</div>
+              <div class="action-desc">4 noeuds Southwest en congestion (ZURICH, CHATHAM, LONDON, TORONTO). Ne pas acheter sur ces noeuds aujourd'hui.</div>
+            </div>
+          </div>
+          <div class="action-item info">
+            <div class="action-icon">🛡️</div>
+            <div class="action-text">
+              <div class="action-segment">Gestionnaire d'actifs — HEDGE</div>
+              <div class="action-desc">LMP moyen +22% vs hier. Couvrir la position via contrats à terme pour les 48h à venir. Température -12°C maintient la pression.</div>
+            </div>
+          </div>
+          <div class="action-item success">
+            <div class="action-icon">🌙</div>
+            <div class="action-text">
+              <div class="action-segment">Trader — ACHETER nuit</div>
+              <div class="action-desc">Fenêtre LMP négatif possible 2h-4h si vent fort. Activer stockage batteries pour arbitrage nuit/jour.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- TAB 4 — PRÉDICTION ML                           -->
+<!-- ════════════════════════════════════════════════ -->
+<div id="tab-prediction" class="tab-content">
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi-card green"><div class="kpi-label">MAPE Modèle</div><div class="kpi-value">2.8%</div><div class="kpi-sub">↓ vs 7.2% sans météo</div><div class="kpi-delta delta-down">▼ -61%</div></div>
+    <div class="kpi-card cyan"><div class="kpi-label">MAE</div><div class="kpi-value">412</div><div class="kpi-sub">MW d'erreur moyenne</div><div class="kpi-delta delta-down">▼ -65%</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Prévision demain</div><div class="kpi-value">18 210</div><div class="kpi-sub">MW — Intervalle ±380 MW</div><div class="kpi-delta delta-up">▲ +2.1%</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Feature #1</div><div class="kpi-value" style="font-size:22px">Température</div><div class="kpi-sub">Importance : 34%</div></div>
+  </div>
+
+  <div class="grid-equal">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-green"></div>Prédiction vs Réel — 30 derniers jours</div>
+        <span class="panel-tag tag-green">XGBOOST</span>
+      </div>
+      <div class="panel-body">
+        <svg width="100%" height="200" viewBox="0 0 560 200">
+          <defs>
+            <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#00ff88" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#00ff88" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <line x1="30" y1="10" x2="30" y2="165" stroke="#1e2d3d" stroke-width="1"/>
+          <line x1="30" y1="165" x2="550" y2="165" stroke="#1e2d3d" stroke-width="1"/>
+          <line x1="30" y1="130" x2="550" y2="130" stroke="#1e2d3d" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="30" y1="95" x2="550" y2="95" stroke="#1e2d3d" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="30" y1="60" x2="550" y2="60" stroke="#1e2d3d" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <text x="26" y="133" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="end">14000</text>
+          <text x="26" y="98" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="end">16000</text>
+          <text x="26" y="63" fill="#405060" font-size="9" font-family="Share Tech Mono" text-anchor="end">18000</text>
+          <!-- Confidence interval -->
+          <polygon points="30,132 80,125 130,118 180,110 230,105 280,100 330,98 380,102 430,108 480,115 530,120 530,115 480,108 430,102 380,96 330,92 280,94 230,99 180,104 130,112 80,119 30,126"
+            fill="#00ff88" opacity="0.07"/>
+          <!-- Actual line -->
+          <polyline points="30,129 80,122 130,115 180,107 230,102 280,97 330,95 380,99 430,105 480,112 530,117"
+            fill="none" stroke="#7090a8" stroke-width="2"/>
+          <!-- Predicted line -->
+          <polyline points="30,131 80,124 130,117 180,109 230,104 280,99 330,97 380,101 430,107 480,114 530,119"
+            fill="none" stroke="#00ff88" stroke-width="2.5"/>
+          <!-- Dots actual -->
+          <circle cx="30" cy="129" r="3" fill="#7090a8"/><circle cx="130" cy="115" r="3" fill="#7090a8"/>
+          <circle cx="230" cy="102" r="3" fill="#7090a8"/><circle cx="330" cy="95" r="3" fill="#7090a8"/>
+          <circle cx="430" cy="105" r="3" fill="#7090a8"/><circle cx="530" cy="117" r="3" fill="#7090a8"/>
+          <!-- Dots predicted -->
+          <circle cx="30" cy="131" r="3" fill="#00ff88"/><circle cx="130" cy="117" r="3" fill="#00ff88"/>
+          <circle cx="230" cy="104" r="3" fill="#00ff88"/><circle cx="330" cy="97" r="3" fill="#00ff88"/>
+          <circle cx="430" cy="107" r="3" fill="#00ff88"/><circle cx="530" cy="119" r="3" fill="#00ff88"/>
+          <!-- Legend -->
+          <line x1="32" y1="185" x2="52" y2="185" stroke="#00ff88" stroke-width="2"/>
+          <text x="56" y="188" fill="#7090a8" font-size="9" font-family="Share Tech Mono">Prédiction</text>
+          <line x1="130" y1="185" x2="150" y2="185" stroke="#7090a8" stroke-width="2"/>
+          <text x="154" y="188" fill="#7090a8" font-size="9" font-family="Share Tech Mono">Réel</text>
+          <rect x="220" y="179" width="12" height="8" fill="#00ff88" opacity="0.15"/>
+          <text x="236" y="188" fill="#7090a8" font-size="9" font-family="Share Tech Mono">Intervalle conf. 95%</text>
+        </svg>
+
+        <!-- Feature importance mini bars -->
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">Feature Importance — XGBoost</div>
+          <div class="zone-list">
+            <div class="zone-row"><div class="zone-name">Température</div><div class="zone-bar-wrap"><div class="zone-bar" style="width:85%;background:linear-gradient(90deg,#00ff88,#00cc66)"><span class="zone-bar-val">34%</span></div></div></div>
+            <div class="zone-row"><div class="zone-name">Heure</div><div class="zone-bar-wrap"><div class="zone-bar" style="width:55%;background:linear-gradient(90deg,#00d4ff,#0099cc)"><span class="zone-bar-val">22%</span></div></div></div>
+            <div class="zone-row"><div class="zone-name">Lag J-1</div><div class="zone-bar-wrap"><div class="zone-bar" style="width:42%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">17%</span></div></div></div>
+            <div class="zone-row"><div class="zone-name">Lag J-7</div><div class="zone-bar-wrap"><div class="zone-bar" style="width:28%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">11%</span></div></div></div>
+            <div class="zone-row"><div class="zone-name">Jour semaine</div><div class="zone-bar-wrap"><div class="zone-bar" style="width:22%;background:linear-gradient(90deg,#7090a8,#405060)"><span class="zone-bar-val">9%</span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="panel-title-dot dot-green"></div>Actions — Basées sur la Prédiction</div>
+        <span class="panel-tag tag-green">ML — MAPE 2.8%</span>
+      </div>
+      <div class="panel-body">
+        <div style="padding:16px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);margin-bottom:14px;text-align:center">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em">Prévision demain</div>
+          <div style="font-family:var(--sans);font-weight:900;font-size:42px;color:var(--red);line-height:1">18 210 MW</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:4px">± 380 MW — Intervalle confiance 95%</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--red);margin-top:8px">⚠ DÉPASSE SEUIL 18 000 MW</div>
+        </div>
+        <div class="action-list">
+          <div class="action-item critical">
+            <div class="action-icon">🔴</div>
+            <div class="action-text">
+              <div class="action-segment">Opérateur IESO — URGENT</div>
+              <div class="action-desc">Modèle prédit 18 210 MW à 19h. Activer protocole réserve. Probabilité dépassement : 87%.</div>
+            </div>
+          </div>
+          <div class="action-item warning">
+            <div class="action-icon">🏭</div>
+            <div class="action-text">
+              <div class="action-segment">Class A — Économies potentielles</div>
+              <div class="action-desc">Peak prédit 19h demain. Baisser consommation 9h-21h = économies ~$180K sur Global Adjustment annuel.</div>
+            </div>
+          </div>
+          <div class="action-item info">
+            <div class="action-icon">📊</div>
+            <div class="action-text">
+              <div class="action-segment">Monitoring modèle</div>
+              <div class="action-desc">MAPE actuel 2.8% — sous le seuil de retrain (5%). Modèle stable. Prochain retrain planifié J+14.</div>
+            </div>
+          </div>
+          <div class="action-item success">
+            <div class="action-icon">✅</div>
+            <div class="action-text">
+              <div class="action-segment">Qualité prédiction</div>
+              <div class="action-desc">Intervalle confiance étroit (±380 MW). Prédiction fiable. Feature température: -12°C bien capturée.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- TAB 5 — ACTIONS                                  -->
+<!-- ════════════════════════════════════════════════ -->
+<div id="tab-actions" class="tab-content">
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi-card red"><div class="kpi-label">Critiques</div><div class="kpi-value">2</div><div class="kpi-sub">Actions immédiates</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Avertissements</div><div class="kpi-value">4</div><div class="kpi-sub">Avant 21h aujourd'hui</div></div>
+    <div class="kpi-card cyan"><div class="kpi-label">Informatifs</div><div class="kpi-value">3</div><div class="kpi-sub">Planification J+7</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Opportunités</div><div class="kpi-value">2</div><div class="kpi-sub">ESG + Trading</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title"><div class="panel-title-dot dot-red"></div>Centre de Commande — Toutes les Actions</div>
+      <span class="panel-tag tag-red">13 MAR 2026 — 14:32</span>
+    </div>
+    <div class="panel-body">
+      <div class="action-list">
+        <div class="action-item critical"><div class="action-icon">🔴</div><div class="action-text"><div class="action-segment">Opérateur IESO — CRITIQUE — Demande</div><div class="action-desc">Prévision 18 210 MW demain à 19h. Dépasse seuil critique 18 000 MW. Activer centrales gaz de réserve maintenant. Délai d'activation : 4-6h.</div></div><div class="action-time">→ Maintenant</div></div>
+        <div class="action-item critical"><div class="action-icon">💹</div><div class="action-text"><div class="action-segment">Trader — CRITIQUE — LMP Congestion</div><div class="action-desc">ZURICH-LT $195.50 avec congestion active. Arbitrage spread $101.89/MWh disponible. Fenêtre de 2-3h maximum avant correction marché.</div></div><div class="action-time">→ Maintenant</div></div>
+        <div class="action-item warning"><div class="action-icon">📞</div><div class="action-text"><div class="action-segment">Opérateur IESO — Import Manitoba</div><div class="action-desc">Contacter Manitoba Hydro pour import +400 MW. Température -12°C prévue demain. Capacité disponible sur intertie Manitoba confirmée.</div></div><div class="action-time">→ 17h00</div></div>
+        <div class="action-item warning"><div class="action-icon">🏭</div><div class="action-text"><div class="action-segment">Class A — Réduction consommation</div><div class="action-desc">Alerter clients industriels pour réduction 9h-21h demain. Probabilité top-5 annuel 87%. Économies potentielles : $180K-$1.2M selon client.</div></div><div class="action-time">→ 18h00</div></div>
+        <div class="action-item warning"><div class="action-icon">🛡️</div><div class="action-text"><div class="action-segment">Gestionnaire d'actifs — Hedge position</div><div class="action-desc">LMP moyen +22% vs hier. Couvrir exposition via contrats à terme 48h. Risque volatilité prix élevé avec froid persistant prévu.</div></div><div class="action-time">→ 16h00</div></div>
+        <div class="action-item warning"><div class="action-icon">❄️</div><div class="action-text"><div class="action-segment">Facility Manager — Pré-chauffage</div><div class="action-desc">Programmer pré-chauffage bâtiments 2h-6h pour éviter pic de demande au réveil. Réduction potentielle 15-20% consommation heure de pointe.</div></div><div class="action-time">→ 02h00</div></div>
+        <div class="action-item info"><div class="action-icon">🏗️</div><div class="action-text"><div class="action-segment">Planificateur réseau — Zone Southwest</div><div class="action-desc">Southwest à +8% vs moyenne sur 7 jours. Initier étude de renforcement lignes transmission Windsor-Toronto. RFP Q2 2026.</div></div><div class="action-time">→ J+30</div></div>
+        <div class="action-item info"><div class="action-icon">📊</div><div class="action-text"><div class="action-segment">ML Team — Monitoring modèle</div><div class="action-desc">MAPE 2.8% — stable. Prochain retrain prévu J+14. Seuil d'alerte automatique : 5%. Aucune dégradation détectée par Evidently AI.</div></div><div class="action-time">→ J+14</div></div>
+        <div class="action-item info"><div class="action-icon">🌿</div><div class="action-text"><div class="action-segment">Gestionnaire ESG — Planification ops</div><div class="action-desc">Fenêtre énergie propre 3h-6h (nucléaire dominant, gaz 0%). Planifier opérations énergivores et chargement flotte VE sur ce créneau.</div></div><div class="action-time">→ 03h00</div></div>
+        <div class="action-item success"><div class="action-icon">🌙</div><div class="action-text"><div class="action-segment">Trader — Opportunité stockage</div><div class="action-desc">LMP négatif possible 2h-4h si production éolienne nocturne dépasse la demande. Activer batteries de stockage pour arbitrage nuit/jour.</div></div><div class="action-time">→ 02h00</div></div>
+        <div class="action-item success"><div class="action-icon">💡</div><div class="action-text"><div class="action-segment">Développeur projets — Opportunité Southwest</div><div class="action-desc">Croissance constante zone Southwest. Opportunité développement stockage d'énergie 50-100 MW. ROI estimé 8-12 ans selon tarifs actuels.</div></div><div class="action-time">→ Q2 2026</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FOOTER -->
+<div class="dash-footer">
+  <span>SmartGrid-AI v1.0 — Données IESO Ontario + Open-Meteo</span>
+  <span>Modèle XGBoost — MAPE 2.8% — Dernière mise à jour : 13 Mar 2026 14:32 HNE</span>
+  <span>© 2026 SmartGrid-AI — Portfolio Project</span>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  document.getElementById('clock').textContent =
+    `13 Mar 2026 — ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+</body>
+</html>
