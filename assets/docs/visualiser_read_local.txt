@@ -1,0 +1,8 @@
+Dans le terminal avec grip
+
+'''
+pip install grip
+grip README.md
+'''
+
+Ça lance un serveur local sur http://localhost:6419 qui simule exactement le rendu GitHub.
